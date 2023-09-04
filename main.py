@@ -76,3 +76,13 @@ def process_tickers_endpoint_by_date(date: str, tickers: List[str]):
     download_arquivo(file_url, destination), unzip(destination)
     processed_data = process_tickers(txt_path, tickers)
     return processed_data
+
+
+@app.post("/stockprices/year/filter")
+def process_tickers_endpoint_by_year(year: str, tickers: List[str]):
+    file_url = f'https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A{year}.ZIP'
+    destination = f'COTAHIST_A{year}.ZIP'
+    txt_path = f'COTAHIST_A{year}.TXT'
+    download_arquivo(file_url, destination), unzip(destination)
+    processed_data = process_tickers(txt_path, tickers)
+    return processed_data
