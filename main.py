@@ -1,4 +1,5 @@
-# usar no terminal para ativar a API uvicorn main:app --host 0.0.0.0 --port 8000
+# usar no terminal para ativar a API uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+# uvicorn main:app --reload
 # abrir local para testar a API http://localhost:8000/docs
 
 
@@ -9,18 +10,11 @@ from fastapi import FastAPI
 from typing import List
 
 
-yesterday = datetime.now() - timedelta(days=1)
-data_consulta = yesterday.strftime('%d'.zfill(2) + '%m'.zfill(2) + '%Y')
-file_url = f'https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_D{data_consulta}.ZIP'
-destination = f'COTAHIST_D{data_consulta}.ZIP'
-txt_path = f'COTAHIST_D{data_consulta}.TXT'
 app = FastAPI()
 
 
-def process_tickers(tickers: List[str]):
+def process_tickers(txt_path, tickers: List[str]):
     processed_data = []
-    download_arquivo()
-    unzip()
     with open(txt_path, "r", encoding='utf-8') as arquivo:
         # Lê cada linha do arquivo
         for linha in arquivo:
@@ -45,8 +39,8 @@ def process_tickers(tickers: List[str]):
     return processed_data
 
 
-def download_arquivo():
-    response = requests.get(file_url, stream=True)
+def download_arquivo(url, destination):
+    response = requests.get(url, stream=True)
     if response.status_code == 200:
         with open(destination, 'wb') as file:
             for chunk in response.iter_content(chunk_size=8192):
@@ -54,7 +48,7 @@ def download_arquivo():
         print("Download concluído.")
 
 
-def unzip():
+def unzip(destination):
     with ZipFile(destination, 'r') as zip_file:
         # extrair todos os arquivos
         print('Extraindo...')
@@ -64,5 +58,11 @@ def unzip():
 
 @app.post("/stockprices/filter")
 def process_tickers_endpoint(tickers: List[str]):
-    processed_data = process_tickers(tickers)
+    yesterday = datetime.now() - timedelta(days=1)
+    data_consulta = yesterday.strftime('%d'.zfill(2) + '%m'.zfill(2) + '%Y')
+    file_url = f'https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_D{data_consulta}.ZIP'
+    destination = f'COTAHIST_D{data_consulta}.ZIP'
+    txt_path = f'COTAHIST_D{data_consulta}.TXT'
+    download_arquivo(file_url, destination), unzip(destination)
+    processed_data = process_tickers(txt_path, tickers)
     return processed_data
